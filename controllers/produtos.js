@@ -20,15 +20,31 @@ function listagemProdutos(req, resp){
     )
 }
 
-function mostraForm(req, res){
+function mostraForm(req, resp){
     resp.render("produtos/form", {
         validationErrors:[]
     })
 }
 
-function cadastroProdutos(){
-    produtoDAO.save()
+function cadastroProdutos(req, resp){
+    const livro = req.body
+
+    const conexao = connectionFactory.getConnection()
+    const produtoDAO = new ProdutoDAO(conexao)
+
+    produtoDAO.save(
+        livro
+        , function(){
+            resp.redirect('/produtos')
+        }
+        , function(erro){
+            resp.send(erro)        
+        }   
+    )
+    
 }
+
+
 
 // revealing module
 module.exports = {

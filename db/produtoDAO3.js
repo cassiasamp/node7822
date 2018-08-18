@@ -5,7 +5,8 @@ class ProdutoDAO{
     }
 
     lista(funcaoCallbackSucesso, funcaoCallbackDeuRuim) {
-        this.conexao.query("SELECT * FROM livros", function (erro, resultado) {
+
+    this.conexao.query("SELECT * FROM livros", function (erro, resultado) {
             try {
                 if (erro == null) {
                     funcaoCallbackSucesso(resultado);

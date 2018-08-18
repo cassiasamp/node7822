@@ -1,21 +1,25 @@
 // função construtora
-const ProdutoDAO = require("./produtoDAO3")
+const ProdutoDAO = require("../db/produtoDAO3")
 
 const connectionFactory = require("../db/connectionFactory")
 
-function listagemProdutos(req, resp){
+function listagemProdutos(req, resp, callbackNext){
     const conexao = connectionFactory.getConnection()
 
     const produtoDAO = new ProdutoDAO(conexao)
     
     produtoDAO.lista(
         function success(resultado = []){
-            resp.render("produtos/lista", {livros: resultado})
 
+            resp.format({
+                json: () =>  resp.send({livros: resultado})
+                ,html: () =>  resp.render("produtos/lista", {livros: resultado})
+            })
+               
             conexao.end()
         }
-        , function error(erro){
-            resp.send(erro)
+        ,function error(erro){
+            callbackNext(erro)
         }
     )
 }
@@ -26,22 +30,46 @@ function mostraForm(req, resp){
     })
 }
 
-function cadastroProdutos(req, resp){
+function cadastroProdutos(req, resp, callbackNext){
     const livro = req.body
 
-    const conexao = connectionFactory.getConnection()
-    const produtoDAO = new ProdutoDAO(conexao)
+    /*let listaErros = []
 
-    produtoDAO.save(
-        livro
-        , function(){
-            resp.redirect('/produtos')
-        }
-        , function(erro){
-            resp.send(erro)        
-        }   
-    )
+    if(!livro.preco){
+        listaErros.push({msg:"preço vazio"})
+    }
+
+    if(!livro.titulo){
+        listaErros.push({msg:"titulo vazio"})
+    }*/
+
+    req.assert('preco', "Preco invalido").isNumeric()
+    req.assert('titulo', "Titulo invalido").notEmpty()
+    //req.assert('cpf', "cpf invalido").notEmpty()
+
+    let listaErros = req.validationErrors()
+
+    if(!listaErros.length){
+        const conexao = connectionFactory.getConnection()
+        const produtoDAO = new ProdutoDAO(conexao)
     
+        produtoDAO.save(
+            livro
+            , function(){
+                resp.redirect('/produtos')
+            }
+            , function(erro){
+                callbackNext(erro)        
+            }   
+        )
+    } else{
+        resp
+            .status(400)
+            .render('produtos/form', {
+                validationErrors: listaErros
+        })
+    }
+   
 }
 
 
